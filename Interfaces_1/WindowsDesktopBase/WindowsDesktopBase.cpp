@@ -8,12 +8,15 @@ WCHAR szTitle1[MAX_LOADSTRING];                 // Текст строки за�
 WCHAR szTitle2[MAX_LOADSTRING];                 // Текст строки заголовка 2 окна
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 
+HWND hWnds[2] = { nullptr, nullptr };
+bool sync = false;
+
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
 INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR    lpCmdLine, _In_ int       nCmdShow) {
+int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow) {
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
 
@@ -67,7 +70,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
     hInst = hInstance;
 
     HWND hWnd1 = CreateWindowW(szWindowClass, szTitle1, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, (LPVOID)0);
 
     if (!hWnd1) {
         return FALSE;
@@ -77,7 +80,7 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
     UpdateWindow(hWnd1);
 
     HWND hWnd2 = CreateWindowW(szWindowClass, szTitle2, WS_OVERLAPPEDWINDOW,
-        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, nullptr);
+        CW_USEDEFAULT, 0, CW_USEDEFAULT, 0, nullptr, nullptr, hInstance, (LPVOID)1);
 
     if (!hWnd2) {
         return FALSE;
@@ -93,7 +96,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
     switch (message) {
         case WM_CREATE: // Создание
         {
-            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)TRUE);
+            CREATESTRUCT *pcs = (CREATESTRUCT *)lParam;
+            int index = (int)(INT_PTR)pcs->lpCreateParams;
+
+            WindowData *data = new WindowData();
+            data->isRed = true;
+            data->index = index;
+            data->coords = { 0, 0 };
+
+            hWnds[index] = hWnd;
+            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)data);
         }
         break;
         case WM_COMMAND: // Меню
@@ -107,6 +119,11 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
                 case IDM_EXIT:
                     DestroyWindow(hWnd);
                     break;
+                case IDM_TOGGLE_SYNC:
+                    sync = !sync;
+                    InvalidateRect(hWnds[0], nullptr, FALSE);
+                    InvalidateRect(hWnds[1], nullptr, FALSE);
+                    break;
                 default:
                     return DefWindowProc(hWnd, message, wParam, lParam);
             }
@@ -114,6 +131,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         break;
         case WM_PAINT: // Отрисовка
         {
+            WindowData *data = (WindowData *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
 
@@ -122,8 +140,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             FillRect(hdc, &ps.rcPaint, hBrush);
 
             // Создание репа для рисования красного креста, сохранение исходного
-            BOOL isRed = (BOOL)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-            HPEN hPen = CreatePen(PS_SOLID, 3, isRed ? RGB(255, 0, 0) : RGB(0, 255, 0));
+            HPEN hPen = CreatePen(PS_SOLID, 3, data->isRed ? RGB(255, 0, 0) : RGB(0, 255, 0));
             HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
             // Получение размера клиентской области
@@ -140,19 +157,45 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             SelectObject(hdc, hOldPen);
             DeleteObject(hPen);
 
+            // Координаты
+            WCHAR buf[128];
+            wsprintfW(buf, L"X=%d, Y=%d, Sync: %s", data->coords.x, data->coords.y, sync ? L"ON" : L"OFF");
+            TextOutW(hdc, 10, 10, buf, lstrlenW(buf));
+
             EndPaint(hWnd, &ps);
+        }
+        break;
+        case WM_MOUSEMOVE: // Движение мыши
+        {
+            WindowData *data = (WindowData *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            int x = GET_X_LPARAM(lParam);
+            int y = GET_Y_LPARAM(lParam);
+            data->coords.x = x;
+            data->coords.y = y;
+            InvalidateRect(hWnd, nullptr, FALSE);
+
+            if (sync) {
+                HWND hWndOther = hWnds[1 - data->index];
+                WindowData *other = (WindowData *)GetWindowLongPtr(hWndOther, GWLP_USERDATA);
+                other->coords = data->coords;
+                InvalidateRect(hWndOther, nullptr, FALSE);
+            }
         }
         break;
         case WM_LBUTTONDOWN: // Левая кнопка мыши
         {
-            BOOL isRed = (BOOL)GetWindowLongPtr(hWnd, GWLP_USERDATA);
-            SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)!isRed);
+            WindowData *data = (WindowData *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            data->isRed = !data->isRed;
             InvalidateRect(hWnd, NULL, TRUE);
         }
         break;
         case WM_DESTROY: // Закрытие
+        {
+            WindowData *data = (WindowData *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
+            delete data;
             PostQuitMessage(0);
-            break;
+        }
+        break;
         default:
             return DefWindowProc(hWnd, message, wParam, lParam);
     }

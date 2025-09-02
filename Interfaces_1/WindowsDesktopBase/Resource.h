@@ -4,6 +4,7 @@
 
 #define IDS_APP_TITLE1			103
 #define IDS_APP_TITLE2          111
+#define IDM_TOGGLE_SYNC         112
 
 #define IDR_MAINFRAME			128
 #define IDD_WINDOWSDESKTOPBASE_DIALOG	102
