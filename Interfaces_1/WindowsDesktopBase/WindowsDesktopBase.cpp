@@ -99,7 +99,29 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         {
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: Добавьте сюда любой код прорисовки, использующий HDC...
+
+            // Очистка фона
+            HBRUSH hBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
+            FillRect(hdc, &ps.rcPaint, hBrush);
+
+            // Создание репа для рисования красного креста, сохранение исходного
+            HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
+
+            // Получение размера клиентской области
+            RECT rect;
+            GetClientRect(hWnd, &rect);
+
+            // Рисование креста
+            MoveToEx(hdc, rect.left, rect.top, NULL);
+            LineTo(hdc, rect.right, rect.bottom);
+            MoveToEx(hdc, rect.right, rect.top, NULL);
+            LineTo(hdc, rect.left, rect.bottom);
+
+            // Восстановление старого репа, избавление от нового
+            SelectObject(hdc, hOldPen);
+            DeleteObject(hPen);
+
             EndPaint(hWnd, &ps);
         }
         break;
