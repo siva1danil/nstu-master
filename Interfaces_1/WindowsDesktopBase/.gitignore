@@ -1,0 +1,55 @@
+# Visual Studio build folders
+Debug/
+Release/
+x64/
+x86/
+[Ww][Ii][Nn]32/
+[Bb]uild/
+[Bb]in/
+[Oo]bj/
+
+# Visual Studio files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Cache/backup
+*.VC.db
+*.VC.VC.opendb
+*.ipch
+*.pch
+*.idb
+*.pdb
+*.ilk
+
+# Compiled files
+*.exe
+*.dll
+*.lib
+*.obj
+*.tlb
+*.tli
+*.tlh
+
+# Logs
+*.log
+
+# Other
+*.tmp
+*.bak
+*.ncb
+*.opendb
+
+# Auto-generated files
+*.res
+*.aps
+
+# Ignore generated installer stuff
+*.msi
+*.cab
+*.msm
+*.msp
+
+# Visual Studio folder
+.vs/
