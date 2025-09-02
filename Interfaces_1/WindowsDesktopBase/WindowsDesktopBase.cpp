@@ -7,6 +7,8 @@ HINSTANCE hInst;                                // текущий экземпл
 WCHAR szTitle[MAX_LOADSTRING];                  // Текст строки заголовка
 WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса главного окна
 
+bool isRed = true;
+
 ATOM                MyRegisterClass(HINSTANCE hInstance);
 BOOL                InitInstance(HINSTANCE, int);
 LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
@@ -105,7 +107,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             FillRect(hdc, &ps.rcPaint, hBrush);
 
             // Создание репа для рисования красного креста, сохранение исходного
-            HPEN hPen = CreatePen(PS_SOLID, 3, RGB(255, 0, 0));
+            HPEN hPen = CreatePen(PS_SOLID, 3, isRed ? RGB(255, 0, 0) : RGB(0, 255, 0));
             HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
 
             // Получение размера клиентской области
@@ -123,6 +125,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             DeleteObject(hPen);
 
             EndPaint(hWnd, &ps);
+        }
+        break;
+        case WM_LBUTTONDOWN: // Левая кнопка мыши
+        {
+            isRed = !isRed;
+            InvalidateRect(hWnd, NULL, TRUE);
         }
         break;
         case WM_DESTROY: // Закрытие
