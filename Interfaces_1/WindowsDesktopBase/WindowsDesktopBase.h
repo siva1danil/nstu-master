@@ -2,6 +2,7 @@
 
 #include <windowsx.h>
 #include "resource.h"
+#include <cmath>
 
 struct WindowData {
     bool isRed;   // цвет крестика для окна

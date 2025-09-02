@@ -2,6 +2,7 @@
 #include "WindowsDesktopBase.h"
 
 #define MAX_LOADSTRING 100
+#define TIMER_ID 1
 
 HINSTANCE hInst;                                // текущий экземпляр
 WCHAR szTitle1[MAX_LOADSTRING];                 // Текст строки заголовка 1 окна
@@ -11,10 +12,13 @@ WCHAR szWindowClass[MAX_LOADSTRING];            // имя класса глав�
 HWND hWnds[2] = { nullptr, nullptr };
 bool sync = false;
 
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+ATOM                 MyRegisterClass(HINSTANCE hInstance);
+BOOL                 InitInstance(HINSTANCE, int);
+LRESULT CALLBACK     WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK     About(HWND, UINT, WPARAM, LPARAM);
+static inline double Deg2Rad(double deg);
+static void          DrawHand(HDC hdc, POINT c, double angleRad, int length, int width, COLORREF color);
+static void          DrawClock(HDC hdc, RECT &rc, bool isRed);
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR lpCmdLine, _In_ int nCmdShow) {
     UNREFERENCED_PARAMETER(hPrevInstance);
@@ -106,8 +110,15 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
 
             hWnds[index] = hWnd;
             SetWindowLongPtr(hWnd, GWLP_USERDATA, (LONG_PTR)data);
+
+            SetTimer(hWnd, TIMER_ID, 1000, nullptr);
         }
         break;
+        case WM_TIMER: // Событие таймера
+            if (wParam == TIMER_ID) {
+                InvalidateRect(hWnd, nullptr, FALSE);
+            }
+            break;
         case WM_COMMAND: // Меню
         {
             int wmId = LOWORD(wParam);
@@ -139,23 +150,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
             HBRUSH hBrush = (HBRUSH)GetStockObject(WHITE_BRUSH);
             FillRect(hdc, &ps.rcPaint, hBrush);
 
-            // Создание репа для рисования красного креста, сохранение исходного
-            HPEN hPen = CreatePen(PS_SOLID, 3, data->isRed ? RGB(255, 0, 0) : RGB(0, 255, 0));
-            HPEN hOldPen = (HPEN)SelectObject(hdc, hPen);
-
-            // Получение размера клиентской области
-            RECT rect;
-            GetClientRect(hWnd, &rect);
-
-            // Рисование креста
-            MoveToEx(hdc, rect.left, rect.top, NULL);
-            LineTo(hdc, rect.right, rect.bottom);
-            MoveToEx(hdc, rect.right, rect.top, NULL);
-            LineTo(hdc, rect.left, rect.bottom);
-
-            // Восстановление старого репа, избавление от нового
-            SelectObject(hdc, hOldPen);
-            DeleteObject(hPen);
+            // Часы
+            RECT rc;
+            GetClientRect(hWnd, &rc);
+            DrawClock(hdc, rc, data->isRed);
 
             // Координаты
             WCHAR buf[128];
@@ -191,6 +189,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) 
         break;
         case WM_DESTROY: // Закрытие
         {
+            KillTimer(hWnd, TIMER_ID);
             WindowData *data = (WindowData *)GetWindowLongPtr(hWnd, GWLP_USERDATA);
             delete data;
             PostQuitMessage(0);
@@ -216,4 +215,88 @@ INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
             break;
     }
     return (INT_PTR)FALSE;
+}
+
+// Градусы в радианы
+static inline double Deg2Rad(double deg) { return deg * 3.14159265358979323846 / 180.0; }
+
+// Рисование стрелки
+static void DrawHand(HDC hdc, POINT c, double angleRad, int length, int width, COLORREF color) {
+    // Создание репа
+    HPEN hPen = CreatePen(PS_SOLID, width, color);
+    HPEN hOld = (HPEN)SelectObject(hdc, hPen);
+
+    // Вычисление координат
+    int x = std::lround(c.x + length * std::sin(angleRad));
+    int y = std::lround(c.y - length * std::cos(angleRad));
+
+    // Рисование
+    MoveToEx(hdc, c.x, c.y, nullptr);
+    LineTo(hdc, x, y);
+
+    // Удаление репа
+    SelectObject(hdc, hOld);
+    DeleteObject(hPen);
+}
+
+// Рисование часов
+static void DrawClock(HDC hdc, RECT &rc, bool isRed) {
+    // Сохранение состояния
+    int saved = SaveDC(hdc);
+
+    // Вычисления
+    int w = rc.right - rc.left;
+    int h = rc.bottom - rc.top;
+    int r = (min(w, h) / 2) - 10;
+    POINT c{ rc.left + w / 2, rc.top + h / 2 };
+    
+    if (r < 10) {
+        RestoreDC(hdc, saved);
+        return;
+    }
+
+    // Создание ресусов
+    SYSTEMTIME st{};
+    GetLocalTime(&st);
+
+    COLORREF mainColor = isRed ? RGB(255, 0, 0) : RGB(0, 200, 0);
+    HBRUSH hOldBrush = (HBRUSH)SelectObject(hdc, GetStockObject(NULL_BRUSH));
+    HPEN   hCirclePen = CreatePen(PS_SOLID, 2, mainColor);
+    HPEN   hOldPen = (HPEN)SelectObject(hdc, hCirclePen);
+
+    // Круга
+    Ellipse(hdc, c.x - r, c.y - r, c.x + r, c.y + r);
+
+    // Засечки
+    for (int i = 0; i < 12; ++i) {
+        double a = Deg2Rad(i * 30.0);
+        int r1 = r - 8;
+        int r2 = r;
+        int x1 = std::lround(c.x + r1 * std::sin(a));
+        int y1 = std::lround(c.y - r1 * std::cos(a));
+        int x2 = std::lround(c.x + r2 * std::sin(a));
+        int y2 = std::lround(c.y - r2 * std::cos(a));
+        MoveToEx(hdc, x1, y1, nullptr);
+        LineTo(hdc, x2, y2);
+    }
+
+    // Стрелки
+    double hourA = Deg2Rad(((st.wHour % 12) + st.wMinute / 60.0) * 30.0);
+    DrawHand(hdc, c, hourA, (int)(r * 0.55), 6, mainColor);
+    double minA = Deg2Rad((st.wMinute + st.wSecond / 60.0) * 6.0);
+    DrawHand(hdc, c, minA, (int)(r * 0.75), 4, mainColor);
+    double secA = Deg2Rad(st.wSecond * 6.0);
+    DrawHand(hdc, c, secA, (int)(r * 0.85), 2, RGB(0, 0, 0));
+
+    // Центр
+    HBRUSH hDot = CreateSolidBrush(RGB(0, 0, 0));
+    SelectObject(hdc, hDot);
+    Ellipse(hdc, c.x - 3, c.y - 3, c.x + 3, c.y + 3);
+    DeleteObject(hDot);
+
+    // Восстановление
+    SelectObject(hdc, hOldPen);
+    DeleteObject(hCirclePen);
+    SelectObject(hdc, hOldBrush);
+    RestoreDC(hdc, saved);
 }
