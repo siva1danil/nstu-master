@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContinuousModels_1", "ContinuousModels_1.csproj", "{B604165B-BD7D-6230-604E-F6DFE110688B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B604165B-BD7D-6230-604E-F6DFE110688B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B604165B-BD7D-6230-604E-F6DFE110688B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B604165B-BD7D-6230-604E-F6DFE110688B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B604165B-BD7D-6230-604E-F6DFE110688B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {EA9970F7-B8BB-4327-861F-F08C3CD9F8A6}
+	EndGlobalSection
+EndGlobal
