@@ -3,9 +3,9 @@
 namespace ModernProblems_1;
 
 public class Program {
-    public static void TestContaminated() {
-        ILocationScale clean = new ParetoNormal(v: 3.0, mu: -6.9, sigma: 1.0);
-        ILocationScale noise = new ParetoNormal(v: 3.0, mu: 6.9, sigma: 10.0);
+    public static void TestContaminated(double mu_clean, double sigma_clean, double mu_noise, double sigma_noise) {
+        ILocationScale clean = new ParetoNormal(v: 2.5, mu: mu_clean, sigma: sigma_clean);
+        ILocationScale noise = new ParetoNormal(v: 2.5, mu: mu_noise, sigma: sigma_noise);
         ILocationScale dist = new Contaminated(clean, noise, eps: 0.1);
         Random r = new();
 
@@ -32,6 +32,18 @@ public class Program {
     }
 
     public static void Main(string[] args) {
-        TestContaminated();
+        Console.Write("Enter mu_clean: ");
+        double mu_clean = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
+
+        Console.Write("Enter sigma_clean: ");
+        double sigma_clean = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
+
+        Console.Write("Enter mu_noise: ");
+        double mu_noise = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
+
+        Console.Write("Enter sigma_noise: ");
+        double sigma_noise = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
+
+        TestContaminated(mu_clean, sigma_clean, mu_noise, sigma_noise);
     }
 }
