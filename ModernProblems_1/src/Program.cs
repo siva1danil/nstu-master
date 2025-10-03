@@ -34,27 +34,27 @@ public class Program {
     }
 
     public static void Main(string[] args) {
-        Console.WriteLine("Input parameters for contaminated distribution:");
+        Console.WriteLine("Ввод параметров дистрибуции:");
 
-        Console.Write("  Enter seed: ");
+        Console.Write("  Введите семя: ");
         int seed = int.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
-        Console.Write("  Enter n: ");
+        Console.Write("  Введите n: ");
         int n = int.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
-        Console.Write("  Enter mu_clean: ");
+        Console.Write("  Введите μ чистого: ");
         double mu_clean = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
-        Console.Write("  Enter sigma_clean: ");
+        Console.Write("  Введите σ чистого: ");
         double sigma_clean = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
-        Console.Write("  Enter mu_noise: ");
+        Console.Write("  Введите μ шумового: ");
         double mu_noise = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
-        Console.Write("  Enter sigma_noise: ");
+        Console.Write("  Введите σ шумового: ");
         double sigma_noise = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
-        Console.Write("  Enter epsilon: ");
+        Console.Write("  Введите ε: ");
         double eps = double.Parse(Console.ReadLine()!, CultureInfo.InvariantCulture);
 
         TestContaminated(seed, n, mu_clean, sigma_clean, mu_noise, sigma_noise, eps);
